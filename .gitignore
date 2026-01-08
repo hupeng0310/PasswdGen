@@ -1,0 +1,59 @@
+# 编译产物（Windows/Linux 通用）
+# 可执行文件（Linux 无后缀，Windows 为 .exe）
+a.out
+*.exe
+*.out
+# 目标文件和库文件
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+# 兼容 macOS（可选）
+*.dylib
+
+# CMake 相关（构建目录和临时文件）
+# CLion 默认构建目录（包含所有平台的构建产物）
+cmake-build-debug/
+# 手动指定的 build 目录（常见约定）
+build/
+# 其他可能的输出目录
+out/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+*.cmake
+
+# CLion IDE 配置（不提交个人配置）
+# 包含项目设置、断点、窗口布局等
+.idea/
+# 模块配置文件
+*.iml
+# 工作区配置文件
+*.iws
+# 项目配置文件（若多人协作，可选择性提交，通常忽略）
+*.ipr
+
+# 系统临时文件
+# Windows 临时文件
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+# Linux 临时文件
+# Vim 交换文件
+.*.swp
+.*.swo
+# 备份文件
+*~
+# macOS 目录元文件（可选）
+.DS_Store
+
+# 日志和临时输出
+*.log
+*.tmp
+*.bak
