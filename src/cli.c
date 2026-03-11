@@ -40,7 +40,15 @@ void show_help(const char *program_name) {
     printf("     %s -l 0 6 6 0             # 6小写+6大写(纯字母)\n", program_name);
     printf("     %s -l 6 0 0 0             # 6位数字PIN码\n\n", program_name);
     
-    printf("3. 显示帮助信息:\n");
+    printf("3. 批量生成 (可与 -w 或 -l 组合，位置任意):\n");
+    printf("   %s -n <数量> -w <...>    或    %s -l <...> -n <数量>\n\n", program_name, program_name);
+    printf("   参数说明:\n");
+    printf("     -n           : 一次生成的密码数量 (1-500，默认1)\n\n");
+    printf("   示例:\n");
+    printf("     %s -n 10 -w 16 25 25 25 25   # 批量生成10个16位均衡密码\n", program_name);
+    printf("     %s -l 3 4 4 3 -n 5           # 批量生成5个密码\n\n", program_name);
+
+    printf("4. 显示帮助信息:\n");
     printf("   %s -h\n", program_name);
     printf("   %s --help\n\n", program_name);
     
@@ -189,41 +197,77 @@ static int parse_length_mode(int argc, char *argv[]) {
     return result;
 }
 
+// 从参数列表中提取 -n/--count，返回生成数量，并将剩余参数紧凑到 filtered 中
+static int extract_count(int argc, char *argv[], char **filtered, int *out_argc) {
+    int count = 1;
+    int j = 0;
+    filtered[j++] = argv[0];
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--count") == 0) {
+            if (i + 1 >= argc || !is_valid_number(argv[i + 1])) {
+                fprintf(stderr, "错误: -n 参数需要一个有效的数字\n");
+                return -1;
+            }
+            count = atoi(argv[++i]);
+            if (count < 1 || count > 500) {
+                fprintf(stderr, "错误: 生成数量必须在1-500之间\n");
+                return -1;
+            }
+        } else {
+            filtered[j++] = argv[i];
+        }
+    }
+    *out_argc = j;
+    return count;
+}
+
 // 主解析函数
 int parse_and_execute(int argc, char *argv[]) {
-    // 没有参数或帮助参数
     if (argc == 1) {
         show_help(argv[0]);
         return 1;
     }
-    
+
     // 检查帮助参数
-    if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            show_help(argv[0]);
+            return 1;
+        }
+    }
+
+    // 提取 -n 参数
+    char *filtered[argc];
+    int new_argc = 0;
+    int count = extract_count(argc, argv, filtered, &new_argc);
+    if (count < 0) return -1;
+
+    if (new_argc == 1) {
         show_help(argv[0]);
         return 1;
     }
-    
+
     // 初始化随机数生成器
     if (random_init() != 0) {
         fprintf(stderr, "错误: 随机数生成器初始化失败\n");
         return -1;
     }
-    
+
     int result = -1;
-    
-    // 解析模式
-    if (strcmp(argv[1], "-w") == 0 || strcmp(argv[1], "--weight") == 0) {
-        result = parse_weight_mode(argc, argv);
-    } else if (strcmp(argv[1], "-l") == 0 || strcmp(argv[1], "--length") == 0) {
-        result = parse_length_mode(argc, argv);
-    } else {
-        fprintf(stderr, "错误: 未知参数 '%s'\n", argv[1]);
-        fprintf(stderr, "使用 '%s --help' 查看帮助信息\n", argv[0]);
-        result = -1;
+
+    for (int i = 0; i < count; i++) {
+        if (strcmp(filtered[1], "-w") == 0 || strcmp(filtered[1], "--weight") == 0) {
+            result = parse_weight_mode(new_argc, filtered);
+        } else if (strcmp(filtered[1], "-l") == 0 || strcmp(filtered[1], "--length") == 0) {
+            result = parse_length_mode(new_argc, filtered);
+        } else {
+            fprintf(stderr, "错误: 未知参数 '%s'\n", filtered[1]);
+            fprintf(stderr, "使用 '%s --help' 查看帮助信息\n", argv[0]);
+            result = -1;
+        }
+        if (result != 0) break;
     }
-    
-    // 清理随机数生成器
+
     random_cleanup();
-    
     return result;
 }
