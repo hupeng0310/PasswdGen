@@ -236,20 +236,29 @@ int parse_and_execute(int argc, char *argv[]) {
         }
     }
 
-    // 提取 -n 参数
-    char *filtered[argc];
+    // 提取 -n 参数（MSVC 不支持 C11 VLA，改用动态分配）
+    char **filtered = malloc((size_t)argc * sizeof(char *));
+    if (filtered == NULL) {
+        fprintf(stderr, "错误: 内存分配失败\n");
+        return -1;
+    }
     int new_argc = 0;
     int count = extract_count(argc, argv, filtered, &new_argc);
-    if (count < 0) return -1;
+    if (count < 0) {
+        free(filtered);
+        return -1;
+    }
 
     if (new_argc == 1) {
         show_help(argv[0]);
+        free(filtered);
         return 1;
     }
 
     // 初始化随机数生成器
     if (random_init() != 0) {
         fprintf(stderr, "错误: 随机数生成器初始化失败\n");
+        free(filtered);
         return -1;
     }
 
@@ -269,5 +278,6 @@ int parse_and_execute(int argc, char *argv[]) {
     }
 
     random_cleanup();
+    free(filtered);
     return result;
 }

@@ -5,6 +5,10 @@ project(PasswdGen C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 # 源文件列表
 set(SOURCES
     src/main.c
